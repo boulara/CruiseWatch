@@ -82,7 +82,7 @@ def main():
 		room_rate = room_rates[level]
 		if ( room_rate > past_rate):
 			text = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
-			#fncPushover(text)
+			fncPushover(text)
 			print(text)
 		else:
 			#text = "PRICE ALERT: " + cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
