@@ -29,7 +29,7 @@ def main():
 
 	### Reterieve config data for Pushover & Email
 	config = configparser.ConfigParser()
-	config.read('../Config-Data/config.ini')
+	config.read('config.ini')
 	cruises = sys.argv[1:]
 
 	if not cruises:
@@ -140,7 +140,7 @@ def fncCheckRates(cruiseID,config):
 		room_rate = room_rates[level]
 		if ( room_rate > past_rate):
 			msg = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
-			#fncSendPushover(msg,config)
+			fncSendPushover(msg,config)
 			fncSendEmail(msg,config)
 			print(msg)
 		else:
