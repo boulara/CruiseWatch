@@ -92,7 +92,7 @@ def main():
 
 
 
-	pprint(room_rates)
+	#pprint(room_rates)
 	### UPDATE JSON FILE
 
 	fncSaveRates(cruiseID,room_rates)
@@ -101,10 +101,15 @@ def main():
 ################# FUNCTIONS #################
 
 def fncPushover(msg):
-    from pushover import init, Client
-    init("a9ozHmfCxm6cWQE79KRKXfLNrDXoK2")
-    user_key = "uHEMkqk8JcqYkTg7UktHPusRqf5UtF "
-    client = Client(user_key).send_message(msg)
+	import http.client, urllib
+	conn = http.client.HTTPSConnection("api.pushover.net:443")
+	conn.request("POST", "/1/messages.json",
+		urllib.parse.urlencode({
+			"token": "a9ozHmfCxm6cWQE79KRKXfLNrDXoK2",
+	    	"user": "uHEMkqk8JcqYkTg7UktHPusRqf5UtF",
+	    	"message": msg,
+	 	}), { "Content-type": "application/x-www-form-urlencoded" })
+	conn.getresponse()
 
 def fncSaveRates(id,rates):
 	with open (id+'.json','w') as outfile:
