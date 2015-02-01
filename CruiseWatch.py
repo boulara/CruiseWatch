@@ -18,6 +18,8 @@ import sys
 import json
 import os.path
 import locale
+import configparser
+import string
 from pprint import *
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -25,12 +27,65 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 ### Main ###
 def main():
 
-	if (sys.argv[1]):
-		cruiseID = sys.argv[1]
-	else:
-		cruiseID = '12345'
+	### Reterieve config data for Pushover & Email
+	config = configparser.ConfigParser()
+	config.read('config.ini')
+	cruises = sys.argv[1:]
 
-	path = 'cruise-data/'
+	if not cruises:
+		print('No Cruises found!')
+		sys.exit()
+	for cruiseID in cruises:
+		print('########## Running Data for ' + cruiseID + ' ##########')
+		fncCheckRates(cruiseID,config)	
+
+	
+
+### END OF MAIN ###	
+################# FUNCTIONS #################
+
+def fncSendPushover(msg,config):
+	import http.client, urllib
+	conn = http.client.HTTPSConnection("api.pushover.net:443")
+	conn.request("POST", "/1/messages.json",
+		urllib.parse.urlencode({
+			"token": config['pushover']['token'],
+	    	"user": config['pushover']['key'],
+	    	"message": msg,
+	 	}), { "Content-type": "application/x-www-form-urlencoded" })
+	conn.getresponse()
+
+def fncSendEmail(msg, config):
+	import smtplib
+	from_addr = config['email']['username']
+	to_addrs = 'boulara@me.com, llinzee@gmail.com'
+
+	username = config['email']['username']
+	pwd = config['email']['password']
+
+	session = smtplib.SMTP('smtp.gmail.com', 587)
+	session.ehlo()
+	session.starttls()
+	session.login(username, pwd)
+
+	headers = "\r\n".join(["from: " + from_addr,
+                       "subject: " + msg,
+                       "to: " + to_addrs,
+                       "mime-version: 1.0",
+                       "content-type: text/html"])
+
+	# body_of_email can be plaintext or html!                    
+	content = headers + "\r\n\r\n" + "Rick Rocks "
+	session.sendmail(username, to_addrs, content)
+
+def fncSaveRates(id,rates):
+	with open (id+'.json','w') as outfile:
+		json.dump(rates, outfile)
+
+def fncFormatCurrency(i):
+	return locale.currency(i)
+
+def fncCheckRates(cruiseID,config):
 
 	fileName = cruiseID + '.json'
 
@@ -47,9 +102,7 @@ def main():
 			past_room_rates = json.load(past_rates_file)
 			#pprint(past_room_rates)
 
-
 	browser = mechanicalsoup.Browser()
-
 	baseUrl = "http://www.vacationstogo.com/login.cfm?deal=" 
 
 	fullUrl = baseUrl + cruiseID
@@ -73,63 +126,33 @@ def main():
 	cruise_meta_data = soup.find("span", {"class":"vtgfont16"}).text.replace("departing","").replace("on","").replace("  "," ")
 	print(cruise_meta_data)
 
+	#Get Config Data
+	token = config['pushover']['token']
+	key = config['pushover']['key']
+	email_addr = config['email']['username']
+	pwd = config['email']['password']
 
-	text = ''
+	msg = ''
 	levels = ['inside','oceanview','balcony','suite']
 
 	for level in levels:
 		past_rate = past_room_rates[level]
 		room_rate = room_rates[level]
 		if ( room_rate > past_rate):
-			text = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
-			fncSendPushover(text)
-			fncSendEmail(text)
-			print(text)
+			msg = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
+			fncSendPushover(msg,config)
+			fncSendEmail(msg,config)
+			print(msg)
 		else:
 			#text = "PRICE ALERT: " + cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
-			text = "No Price Change - " + dateChecked
-			print(text)
+			msg = "No Price Change - " + dateChecked
+			print(msg)
 
 	#pprint(room_rates)
 	### UPDATE JSON FILE
 
-	fncSaveRates(cruiseID,room_rates)
+	fncSaveRates(cruiseID,room_rates)	
 
-	fncTest()
-### END OF MAIN ###	
-################# FUNCTIONS #################
-
-def fncSendPushover(msg):
-	import http.client, urllib
-	conn = http.client.HTTPSConnection("api.pushover.net:443")
-	conn.request("POST", "/1/messages.json",
-		urllib.parse.urlencode({
-			"token": "a9ozHmfCxm6cWQE79KRKXfLNrDXoK2",
-	    	"user": "uHEMkqk8JcqYkTg7UktHPusRqf5UtF",
-	    	"message": msg,
-	 	}), { "Content-type": "application/x-www-form-urlencoded" })
-	conn.getresponse()
-
-def fncSendEmail(msg):
-	x=1
-
-def fncSaveRates(id,rates):
-	with open (id+'.json','w') as outfile:
-		json.dump(rates, outfile)
-
-def fncFormatCurrency(i):
-	return locale.currency(i)
-
-def fncTest():
-	import configparser
-	import string
-
-	config = configparser.ConfigParser()
-	config.read('config.ini')
-
-	token = config['pushover']['token']
-
-	print('!!!: ' + token)
 
 ### Call Main ###
 if __name__ == '__main__':
