@@ -29,7 +29,7 @@ def main():
 
 	### Reterieve config data for Pushover & Email
 	config = configparser.ConfigParser()
-	config.read('config.ini')
+	config.read('../Config-Data/config.ini')
 	cruises = sys.argv[1:]
 
 	if not cruises:
