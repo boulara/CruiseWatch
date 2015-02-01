@@ -82,25 +82,24 @@ def main():
 		room_rate = room_rates[level]
 		if ( room_rate > past_rate):
 			text = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
-			fncPushover(text)
+			fncSendPushover(text)
+			fncSendEmail(text)
 			print(text)
 		else:
 			#text = "PRICE ALERT: " + cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
 			text = "No Price Change - " + dateChecked
 			print(text)
 
-
-
-
 	#pprint(room_rates)
 	### UPDATE JSON FILE
 
 	fncSaveRates(cruiseID,room_rates)
 
+	fncTest()
 ### END OF MAIN ###	
 ################# FUNCTIONS #################
 
-def fncPushover(msg):
+def fncSendPushover(msg):
 	import http.client, urllib
 	conn = http.client.HTTPSConnection("api.pushover.net:443")
 	conn.request("POST", "/1/messages.json",
@@ -111,12 +110,26 @@ def fncPushover(msg):
 	 	}), { "Content-type": "application/x-www-form-urlencoded" })
 	conn.getresponse()
 
+def fncSendEmail(msg):
+	x=1
+
 def fncSaveRates(id,rates):
 	with open (id+'.json','w') as outfile:
 		json.dump(rates, outfile)
 
 def fncFormatCurrency(i):
 	return locale.currency(i)
+
+def fncTest():
+	import configparser
+	import string
+
+	config = configparser.ConfigParser()
+	config.read('config.ini')
+
+	token = config['pushover']['token']
+
+	print('!!!: ' + token)
 
 ### Call Main ###
 if __name__ == '__main__':
