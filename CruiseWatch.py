@@ -138,7 +138,7 @@ def fncCheckRates(cruiseID,config):
 	for level in levels:
 		past_rate = past_room_rates[level]
 		room_rate = room_rates[level]
-		if ( room_rate > past_rate):
+		if ( room_rate < past_rate):
 			msg = "PRICE ALERT: " +cruise_meta_data +  " (" + level.upper() + ") WAS: " + fncFormatCurrency(past_rate) +  " - NOW " + fncFormatCurrency(room_rate)
 			fncSendPushover(msg,config)
 			fncSendEmail(msg,config)
